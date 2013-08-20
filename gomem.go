@@ -64,13 +64,14 @@ func (cache *MyCache) RemoveExpired() {
 var (
   singleFlag = flag.Bool("single", false, "Start in single mode")
   m_cache =    CreateCache(time.Hour)
+  port = flag.String("port", "11211", "port number")
 )
 func main() {
     flag.Parse()
 
-	listener, err := net.Listen("tcp", "127.0.0.1:11211")
+	listener, err := net.Listen("tcp", "127.0.0.1:"+ *port)
 	if err != nil {
-		panic("Error listening on 11211: " + err.Error())
+		panic("Error listening on "+ *port + ":"+ err.Error())
 	}
 
 	if *singleFlag {
@@ -127,8 +128,11 @@ func handleConn(conn net.Conn) {
 			if g_ok{
 				    conn.Write([]uint8("VALUE " + string(g_value) + " 0 " + g_length  + "\r\n"))
 				    conn.Write([]uint8(string(g_value)  + "\r\n"))
+				    conn.Write([]uint8("END\r\n"))
+			} else {
+			        conn.Write([]uint8("ERROR\r\n"))
 			}
-			conn.Write([]uint8("END\r\n"))
+
 
 		case "set":
 			key := parts[1]
@@ -140,6 +144,10 @@ func handleConn(conn net.Conn) {
 			reader.Read(val)
 			m_cache.Put(key,val)
 			conn.Write([]uint8("STORED\r\n"))
+
+
+		case "version":
+		      conn.Write([]uint8("VERSION 1.0\r\n"))
 		}
 	}
 }
