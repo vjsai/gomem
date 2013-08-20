@@ -62,7 +62,7 @@ func (cache *MyCache) RemoveExpired() {
 }
 
 var (
-  CACHE      = map[string]string{}
+  //CACHE      = map[string]string{}
   singleFlag = flag.Bool("single", false, "Start in single mode")
   m_cache =    CreateCache(time.Hour)
 )
@@ -74,7 +74,7 @@ func main() {
 		panic("Error listening on 11211: " + err.Error())
 	}
 
-	CACHE = make(map[string]string)
+	//CACHE = make(map[string]string)
 
 	if *singleFlag {
 		netconn, err := listener.Accept()
@@ -125,17 +125,15 @@ func handleConn(conn net.Conn) {
 
 		case "get":
 			key := parts[1]
-			val, ok := CACHE[key]
-			if ok {
-				//length := strconv.Itoa(len(val))
-				g_value,g_ok := m_cache.Get(key)
-				g_length := strconv.Itoa(len(g_value))
-				if g_ok{
+			//val, ok := CACHE[key]
+			//length := strconv.Itoa(len(val))
+			g_value,g_ok := m_cache.Get(key)
+			g_length := strconv.Itoa(len(g_value))
+			if g_ok{
 				    conn.Write([]uint8("VALUE " + string(g_value) + " 0 " + g_length  + "\r\n"))
-				}
-				//conn.Write([]uint8("VALUE " + key + " 0 " + length + "\r\n"))
-				conn.Write([]uint8(val + "\r\n"))
+				    conn.Write([]uint8(string(g_value)  + "\r\n"))
 			}
+			//conn.Write([]uint8("VALUE " + key + " 0 " + length + "\r\n"))
 			conn.Write([]uint8("END\r\n"))
 
 		case "set":
@@ -146,7 +144,7 @@ func handleConn(conn net.Conn) {
 			// Really we should read exactly 'length' bytes + \r\n
 			val := make([]byte, length)
 			reader.Read(val)
-			CACHE[key] = string(val)
+			//CACHE[key] = string(val)
 			m_cache.Put(key,val)
 			conn.Write([]uint8("STORED\r\n"))
 		}
