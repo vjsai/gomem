@@ -8,6 +8,7 @@ import (
 	"net"
 	"strconv"
 	"strings"
+	"time"
 )
 
 var (
@@ -15,6 +16,47 @@ var (
   singleFlag = flag.Bool("single", false, "Start in single mode")
 )
 
+type cacheItem struct{
+        data []byte
+        accessed time.Time
+}
+type MyCache struct {
+	data       map[string]cacheItem
+	expiration time.Duration
+}
+func (cache *MyCache) Get(key string) (data []byte, ok bool) {
+	item, ok := cache.data[key]
+	if !ok {
+		return nil, false
+	}
+	if item.isExpired(cache.expiration) {
+		cache.Remove(key)
+		return nil, false
+	}
+	item.accessed = time.Now()
+	cache.data[key] = item
+	return item.data, true
+}
+
+func (cache *MyCache) Put(key string, data []byte) {
+	cache.data[key] = cacheItem{data, time.Now()}
+}
+
+func (cache *MyCache) Remove(key string) {
+	delete(cache.data, key)
+}
+
+func (cache *MyCache) Clear() {
+	cache.data = make(map[string]cacheItem)
+}
+
+func (cache *MyCache) RemoveExpired() {
+	for key, item := range cache.data {
+		if item.isExpired(cache.expiration) {
+			cache.Remove(key)
+		}
+	}
+}
 func main() {
     flag.Parse()
 
