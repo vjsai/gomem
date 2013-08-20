@@ -1,3 +1,3 @@
 gomem
 =====
-An In Memory datastore written in go
+A Light Weight In Memory Key-Value store written in go
