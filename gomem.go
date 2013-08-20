@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"sync"
 )
 
 type cacheItem struct{
@@ -20,11 +21,12 @@ func (item cacheItem) isExpired(expiration time.Duration) bool {
 	return time.Now().After(expiredTime)
 }
 type MyCache struct {
+    sync.RWMutex
 	data       map[string]cacheItem
 	expiration time.Duration
 }
 func CreateCache(expiration time.Duration) *MyCache {
-	return &MyCache{make(map[string]cacheItem), expiration}
+	return &MyCache{data: make(map[string]cacheItem), expiration: expiration}
 }
 
 func (cache *MyCache) Get(key string) (data []byte, ok bool) {
@@ -41,8 +43,24 @@ func (cache *MyCache) Get(key string) (data []byte, ok bool) {
 	return item.data, true
 }
 
+
 func (cache *MyCache) Put(key string, data []byte) {
+    cache.Lock()
 	cache.data[key] = cacheItem{data, time.Now()}
+	cache.Unlock()
+}
+
+
+func (cache *MyCache) Add(key string,data []byte) (n_data []byte,ok bool) {
+     cache.Lock()
+     _,ok = cache.Get(key)
+     if !ok {
+         cache.Unlock()
+         return nil,false
+     }
+     cache.Put(key,data)
+     cache.Unlock()
+     return  nil,true
 }
 
 func (cache *MyCache) Remove(key string) {
@@ -59,6 +77,11 @@ func (cache *MyCache) RemoveExpired() {
 			cache.Remove(key)
 		}
 	}
+}
+
+
+func (cache *MyCache) Increment(key string,n int64) {
+	//need to implement increment operation
 }
 
 var (
@@ -148,6 +171,16 @@ func handleConn(conn net.Conn) {
 
 		case "version":
 		      conn.Write([]uint8("VERSION 1.0\r\n"))
+
+		case "delete":
+		      key := parts[1]
+		      m_cache.Remove(key)
+		      conn.Write([]uint8("DELETED\r\n"))
+
+
+		case "quit":
+		      conn.Write([]uint8("Closing connection with gomem\r\n"))
+		      conn.Close()
 		}
 	}
 }
