@@ -80,9 +80,27 @@ func (cache *MyCache) RemoveExpired() {
 }
 
 
-func (cache *MyCache) Increment(key string,n int64) {
-	//need to implement increment operation
+func (cache *MyCache) Increment(k string, n int64) {
+	//need to implement INCR
 }
+
+func (cache *MyCache) Touch(key string) {
+	//need to implement update of expiration time without fetching
+}
+
+func (cache *MyCache) Decrement(k string, n int64) {
+	//need to implement
+}
+
+func (cache *MyCache) Flush_All()
+{
+   //flush the invalid data
+}
+
+/*
+ need to implement functions for stats
+ provide different caching times.
+ */
 
 var (
   singleFlag = flag.Bool("single", false, "Start in single mode")
