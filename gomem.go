@@ -11,14 +11,13 @@ import (
 	"time"
 )
 
-var (
-  CACHE      = map[string]string{}
-  singleFlag = flag.Bool("single", false, "Start in single mode")
-)
-
 type cacheItem struct{
         data []byte
         accessed time.Time
+}
+func (item cacheItem) isExpired(expiration time.Duration) bool {
+	expiredTime := item.accessed.Add(expiration)
+	return time.Now().After(expiredTime)
 }
 type MyCache struct {
 	data       map[string]cacheItem
@@ -61,6 +60,12 @@ func (cache *MyCache) RemoveExpired() {
 		}
 	}
 }
+
+var (
+  CACHE      = map[string]string{}
+  singleFlag = flag.Bool("single", false, "Start in single mode")
+  m_cache =    CreateCache(time.Hour)
+)
 func main() {
     flag.Parse()
 
@@ -122,8 +127,13 @@ func handleConn(conn net.Conn) {
 			key := parts[1]
 			val, ok := CACHE[key]
 			if ok {
-				length := strconv.Itoa(len(val))
-				conn.Write([]uint8("VALUE " + key + " 0 " + length + "\r\n"))
+				//length := strconv.Itoa(len(val))
+				g_value,g_ok := m_cache.Get(key)
+				g_length := strconv.Itoa(len(g_value))
+				if g_ok{
+				    conn.Write([]uint8("VALUE " + string(g_value) + " 0 " + g_length  + "\r\n"))
+				}
+				//conn.Write([]uint8("VALUE " + key + " 0 " + length + "\r\n"))
 				conn.Write([]uint8(val + "\r\n"))
 			}
 			conn.Write([]uint8("END\r\n"))
@@ -137,6 +147,7 @@ func handleConn(conn net.Conn) {
 			val := make([]byte, length)
 			reader.Read(val)
 			CACHE[key] = string(val)
+			m_cache.Put(key,val)
 			conn.Write([]uint8("STORED\r\n"))
 		}
 	}
