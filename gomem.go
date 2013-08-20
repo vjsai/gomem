@@ -2,7 +2,7 @@ package main
 
 import (
 	"bufio"
-    "flag"
+        "flag"
 	"fmt"
 	"io"
 	"net"
@@ -24,6 +24,10 @@ type MyCache struct {
 	data       map[string]cacheItem
 	expiration time.Duration
 }
+func CreateCache(expiration time.Duration) *MyCache {
+	return &MyCache{make(map[string]cacheItem), expiration}
+}
+
 func (cache *MyCache) Get(key string) (data []byte, ok bool) {
 	item, ok := cache.data[key]
 	if !ok {
