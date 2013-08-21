@@ -21,7 +21,7 @@ func (item cacheItem) isExpired(expiration time.Duration) bool {
 	return time.Now().After(expiredTime)
 }
 type MyCache struct {
-    sync.RWMutex
+        sync.RWMutex
 	data       map[string]cacheItem
 	expiration time.Duration
 }
@@ -84,23 +84,31 @@ func (cache *MyCache) Increment(k string, n int64) {
 	//need to implement INCR
 }
 
-func (cache *MyCache) Touch(key string) {
+func (cache *MyCache) Touch(key string,exp time.Duration) bool {
 	//need to implement update of expiration time without fetching
+	    item, ok := cache.data[key]
+		if !ok {
+			return false
+		}
+		item.accessed = time.Now()
+		cache.expiration = exp
+		return true
 }
 
 func (cache *MyCache) Decrement(k string, n int64) {
 	//need to implement
 }
 
-func (cache *MyCache) Flush_All()
-{
+
+func (cache *MyCache) Flush_All(){
    //flush the invalid data
 }
 
-/*
+ /*
  need to implement functions for stats
  provide different caching times.
  */
+
 
 var (
   singleFlag = flag.Bool("single", false, "Start in single mode")
@@ -186,6 +194,13 @@ func handleConn(conn net.Conn) {
 			m_cache.Put(key,val)
 			conn.Write([]uint8("STORED\r\n"))
 
+		case "touch":
+		      key := parts[1]
+		      val := parts[2]
+		      exp_t,_ := strconv.ParseUint(val,10,32)
+		      exp := time.Duration(exp_t)*time.Second
+		      m_cache.Touch(key,exp)
+		      conn.Write([]uint8("TOUCHED\r\n"))
 
 		case "version":
 		      conn.Write([]uint8("VERSION 1.0\r\n"))
